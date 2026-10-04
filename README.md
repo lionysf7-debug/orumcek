@@ -5,15 +5,17 @@ abstract idea of a web crawler into an animation: a procedurally-walked spider
 targets the real `<a href>` elements on a page, tags the links it touches, tears
 some off and drags them behind on a thread, while the camera follows along.
 
-Two builds from one codebase:
+Two implementations of the same spider in one repository:
 
 - **Browser** — a self-contained `spider.js` / bookmarklet that runs on any live
   page (e.g. a real Wikipedia article), reading the DOM's links as its terrain.
-- **Native macOS menu-bar app** (`mac/`) — a transparent, click-through overlay
+- **Native macOS menu-bar app** (`mac/`) — a native Swift port: a transparent, click-through overlay
   that walks the links, buttons and text of *any* foreground app (Chrome, Finder,
   System Settings, the menu bar, the Dock) by reading the macOS **accessibility
   tree**. Ships Xcode-free via `./build.sh`, requests Accessibility permission,
-  and politely enables/restores browsers' web-content a11y only while it runs.
+  and enables browsers' web-content a11y while it runs, switching it off again
+  on a normal quit.
+  Requires an Apple Silicon Mac with macOS 14+.
 
 **Skills demonstrated:** two-bone inverse kinematics (cosine-rule leg solver),
 gait generation, `<canvas>` rendering, live DOM introspection, the macOS
@@ -31,14 +33,19 @@ Ekrandaki örümcek gerçek `<a href>` öğelerini hedef alır. Değdiği bağla
 
 `mac/` klasöründe, menü çubuğunda çalışan **Örümcek** uygulaması var. Ekranın üstünde şeffaf, tıklamaları geçiren bir katman açar. Örümcek, ön plandaki uygulamanın bağlantılarında, düğmelerinde ve yazılarında gezer: Chrome'daki web sayfaları, Finder, Ayarlar, menü çubuğu ve Dock dahil.
 
+**Gereksinimler:** Apple Silicon (M1 ve sonrası) Mac, macOS 14 Sonoma veya üstü, Xcode Command Line
+Tools 15 veya üstü (`xcode-select --install`; macOS 14 SDK'sı ve Swift 5.9 gerekir, eskiyse Yazılım
+Güncelleme'den güncelleyin). Tam Xcode gerekmez.
+
 ```bash
 cd mac && ./build.sh --install
 ```
 
-- İlk açılışta **Erişilebilirlik izni** ister: Sistem Ayarları > Gizlilik ve Güvenlik > Erişilebilirlik > Örümcek. İzin yokken örümcek yalnızca pencere kenarlarında gezer.
+- İlk açılışta **Erişilebilirlik izni** ister: Sistem Ayarları > Gizlilik ve Güvenlik > Erişilebilirlik > Örümcek. İzin **bir kez** verilir ve kalıcıdır; yalnızca uygulamayı yeniden derleyip kurduğunda tekrar gerekir. İzin yokken örümcek yalnızca pencere kenarlarında gezer.
 - Menü çubuğundaki örümcek simgesinden şunları ayarlayabilirsin: göster/gizle, örümcek sayısı, hız, boyut, renkli efektler, web sayfalarını tarama, menü çubuğu/Dock, tarama günlüğü ve açılışta başlatma.
-- Chrome, Edge, Brave ve Firefox web içeriğinin erişilebilirlik ağacını ancak istenince kurar. Örümcek bunu açar, kapanırken de geri alır. "Web sayfalarını da tara" seçeneği kapatılırsa bu hemen geri alınır.
-- Ad-hoc imza her derlemede değişir. Yeniden derledikten sonra örümcek öğeleri göremezse Erişilebilirlik listesinde Örümcek'i silip (−) yeniden ekle.
+- Chrome, Edge, Brave, Arc, Vivaldi, Opera, Firefox ve Electron uygulamaları web içeriğinin erişilebilirlik ağacını ancak istenince kurar. Örümcek bunu açar ve normal çıkışta ("Örümcek'ten Çık" ya da oturumu kapatma) yeniden kapatır; "Web sayfalarını da tara (Chrome, Electron)" seçeneği kapatılırsa da hemen kapatır. Örümcek zorla kapatılır ya da çökerse (yeniden kurarken `./build.sh --install` çalışan sürümü sonlandırdığında da) bu ayar açık kalır; tarayıcıyı yeniden başlatmak sıfırlar. Örümcek önceki değeri hatırlamaz, her zaman "kapalı" yazar.
+- Ad-hoc imza her derlemede değişir. Yeniden derledikten sonra listede Örümcek açık görünse bile eski izin yeni sürüme geçmez. Çözüm: `tccutil reset Accessibility com.yusufarslan.orumcek` çalıştır, Örümcek'i kapatıp aç; çıkan uyarıda "Sistem Ayarları'nı Aç"a bas ve Erişilebilirlik listesinde Örümcek'in anahtarını aç (ya da menüden "Erişilebilirlik izni ver…").
+- Bazı Electron uygulamaları (ör. Claude masaüstü uygulaması) sayfa içeriğini erişilebilirlik API'sine hiç vermez; bu uygulamalar öndeyken pencerede tutunacak öğe neredeyse kalmaz (en fazla pencere düğmeleri; Claude'da hiç yok), örümcek asıl olarak menü çubuğunda ve Dock'ta gezer. "Menü çubuğu ve Dock'ta da gez" kapalıysa pencere içinde serbestçe dolaşır. Chrome, Finder ve Ayarlar'da sorunsuz çalışır.
 
 ## Tarayıcıda çalıştırma
 
@@ -58,7 +65,9 @@ URL parametreleri: `?n=3` (örümcek sayısı), `?speed=220`, `?size=1.3`, `?dir
 
 Bookmarklet çalışmazsa `spider.js` içeriğini geliştirici konsoluna (Cmd+Option+J) yapıştırın.
 
-## Kısayollar
+## Kısayollar (tarayıcı sürümü)
+
+macOS uygulamasında genel klavye kısayolu yoktur (menü açıkken ⌘Q ile çıkılır); bütün ayarlar menü çubuğundaki simgeden yapılır.
 
 | Tuş | İşlev |
 |---|---|
@@ -77,10 +86,10 @@ Bookmarklet çalışmazsa `spider.js` içeriğini geliştirici konsoluna (Cmd+Op
 
 ## Nasıl çalışıyor
 
-- **Crawler mantığı:** Sayfadaki bağlantıların konumları düzenli aralıklarla okunur. Örümcek ilerleme yönünde, henüz ziyaret etmediği ve makul uzaklıktaki bir bağlantıyı hedef seçer. Ziyaret edilenler `visited` kümesine girer, kalanlar "kuyruk" (frontier) sayılır.
+- **Crawler mantığı:** Sayfadaki bağlantıların konumları düzenli aralıklarla okunur. Örümcek ilerleme yönünde, yakın zamanda ziyaret etmediği ve makul uzaklıktaki bir bağlantıyı hedef seçer. Ziyaret edilen bağlantılar ziyaret zamanıyla birlikte `visited` haritasına girer; aynı bağlantı 30 sn sonra (macOS'ta 25 sn) yeniden hedeflenebilir. Hiç ziyaret edilmemiş olanlar "kuyruk" (frontier) sayılır (macOS'ta ziyaret kayıtları 60 sn sonra silinir, o öğeler yeniden kuyruğa girer).
 - **Yürüyüş:** Her ayak yere sabittir. Gövde ilerledikçe ayak ideal noktasından fazla uzaklaşırsa o bacak tek adım atar. Komşu bacak havadayken bekler, bu da dalga şeklinde bir yürüyüş üretir. Adım hedefinin yakınında bir bağlantı varsa ayak ona tutunur.
 - **Bacaklar:** Diz noktası iki parçalı ters kinematikle (kosinüs teoremi) hesaplanır.
-- **Efektler:** Sayfadaki bağlantılara CSS sınıfları eklenir: renk, yazı tipi ve boyut. Koparılan etiketler, iplikler ve temas halkaları sayfanın üstündeki tek bir `<canvas>` katmanına çizilir.
+- **Efektler (tarayıcı):** Sayfadaki bağlantılara CSS sınıfları eklenir: renk, yazı tipi ve boyut. Koparılan etiketler, iplikler ve temas halkaları sayfanın üstündeki tek bir `<canvas>` katmanına çizilir. macOS uygulamasında işaretler ve etiketler her nesne için ayrı Core Animation katmanlarıyla çizilir.
 
 `spider.js` dosyasını değiştirirseniz bookmarklet'i yeniden üretin:
 
