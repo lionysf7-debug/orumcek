@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crawler Örümceği</title>
+<style>
+  :root {
+    --bg: #101418;
+    --text: #d8dce2;
+    --muted: #a2a9b1;
+    --link: #88a3e8;
+    --rule: #3a3f45;
+    --panel: #202226;
+    --panel-strong: #27292d;
+  }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 150px 16px 120px; }
+  a { color: var(--link); text-decoration: none; }
+  h1, h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; border-bottom: 1px solid var(--rule); }
+  h1 { font-size: 28px; line-height: 1.3; margin: 0 0 4px; }
+  h2 { font-size: 21px; line-height: 1.3; margin: 32px 0 10px; padding-bottom: 2px; }
+  .sub { color: var(--muted); font-size: 12px; margin: 0 0 16px; }
+  ol.refs { padding-left: 2.4em; font-size: 12px; }
+  ol.refs li, ul.plain li { margin-bottom: 4px; }
+  ul.plain { font-size: 12px; padding-left: 1.4em; }
+  .ext { font-size: .75em; opacity: .7; }
+  table.navbox { width: 100%; margin-top: 28px; border: 1px solid var(--rule); border-collapse: collapse; font-size: 12px; }
+  .navbox th { background: var(--panel-strong); padding: 4px 8px; font-weight: 600; }
+  .navbox td { padding: 3px 8px; border-top: 1px solid var(--bg); }
+  .navbox td.g { background: var(--panel); text-align: right; white-space: nowrap; font-weight: 600; width: 1%; }
+  .title {
+    position: fixed; inset: 0 0 auto 0; z-index: 10;
+    padding: 28px 16px 48px;
+    text-align: center; color: #fff;
+    font: 300 clamp(20px, 4.4vw, 34px)/1.2 "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(#000 55%, rgba(0, 0, 0, 0));
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="title" id="title">Web tarayıcıları<br>interneti böyle keşfeder</div>
+<main id="content"></main>
+
+<script>
+(() => {
+  'use strict';
+  const P = new URLSearchParams(location.search);
+
+  /* Tohumlu rastgele sayı: aynı ?seed= her seferinde aynı sayfayı üretir */
+  function mulberry32(a) {
+    return () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rnd = mulberry32(Number(P.get('seed')) || 7);
+  const int = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+  const pick = arr => arr[Math.floor(rnd() * arr.length)];
+  const digits = n => Array.from({ length: n }, () => int(0, 9)).join('');
+
+  /* Kurgusal içerik parçaları (hiçbiri gerçek bir yayına atıf değildir) */
+  const SURNAMES = ['Kaya', 'Demir', 'Yıldız', 'Çelik', 'Aydın', 'Öztürk', 'Arslan', 'Doğan', 'Koç', 'Kurt',
+    'Smith', 'Johnson', 'Müller', 'Schmidt', 'Rossi', 'Dubois', 'Novak', 'Tanaka', 'Kim', 'Li',
+    'Wang', 'Garcia', 'Silva', 'Nowak', 'Ivanova', 'Jensen', 'Brown', 'Martin', 'Fischer', 'Weber'];
+  const SUBJECTS = ['Silk mechanics', 'Web geometry', 'Foraging behaviour', 'Venom composition', 'Leg kinematics',
+    'Visual navigation', 'Courtship signals', 'Thermal tolerance', 'Prey capture strategies', 'Ballooning dispersal',
+    'Molting cycles', 'Sensory hair arrays', 'Hydraulic leg extension', 'Eye arrangement', 'Egg sac construction'];
+  const GROUPS = ['orb-weaving spiders', 'jumping spiders', 'wolf spiders', 'cellar spiders', 'trapdoor spiders',
+    'crab spiders', 'funnel-web spiders', 'sheet-web weavers', 'cave spiders', 'fishing spiders'];
+  const CONTEXTS = ['urban habitats', 'tropical canopies', 'laboratory conditions', 'the Mediterranean basin',
+    'Anatolian steppes', 'island ecosystems', 'cave systems', 'desert margins', 'wetland margins', 'alpine meadows'];
+  const STUDIES = ['a field study', 'a comparative review', 'a meta-analysis', 'a long-term survey', 'a morphometric analysis'];
+  const TR_GROUPS = ['Bahçe örümceği', 'Zıplayan örümcek', 'Kurt örümceği', 'Mağara örümceği', 'Yengeç örümceği'];
+  const TR_SUBJECTS = ['ağ geometrisi', 'av yakalama davranışı', 'ipek dayanımı', 'görsel yön bulma', 'kur davranışı'];
+  const JOURNALS = ['Annals of Web Ecology', 'Silk Science Review', 'Arthropod Motion Letters',
+    'Anadolu Biyoloji Notları', 'Journal of Crawling Studies', 'Proceedings of the Lattice Society'];
+  const BOOKS = ['Örümceklerin Gizli Dünyası', 'Ağın Mimarisi', 'Eklembacaklılar Atlası', 'The Silk Road of Spiders',
+    'Eight Legs, One Web', 'Crawling Through Time', 'A Field Guide to Web Builders', 'Anadolu Örümcekleri Rehberi',
+    'Threads and Traps', 'Sekiz Bacaklı Mühendisler'];
+  const PUBLISHERS = ['Kâğıt Ağ Yayınları', 'Örgü Press', 'Lattice Books', 'Nodal Academic', 'Tırtıl Kitap',
+    'Harbor Hill University Press'];
+  const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'Berlin', 'Boston', 'Kyoto'];
+  const SITES = ['arachno-notes.example', 'silkdb.example', 'web-ecology.example', 'crawler-lab.example'];
+  const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  const FAMILIES = {
+    'Mesothelae': ['Liphistiidae'],
+    'Mygalomorphae': ['Atypidae', 'Antrodiaetidae', 'Barychelidae', 'Ctenizidae', 'Dipluridae', 'Hexathelidae',
+      'Idiopidae', 'Nemesiidae', 'Theraphosidae'],
+    'Araneomorphae': ['Agelenidae', 'Araneidae', 'Clubionidae', 'Ctenidae', 'Dictynidae', 'Dysderidae', 'Eresidae',
+      'Filistatidae', 'Gnaphosidae', 'Hahniidae', 'Linyphiidae', 'Lycosidae', 'Mimetidae', 'Oonopidae', 'Oxyopidae',
+      'Pholcidae', 'Pisauridae', 'Salticidae', 'Segestriidae', 'Sparassidae', 'Tetragnathidae', 'Theridiidae',
+      'Thomisidae', 'Uloboridae', 'Zodariidae'],
+    'Bilim': ['Araknoloji', 'Örümcek ipeği', 'Örümcek zehri', 'Araknofobi', 'Web tarayıcısı']
+  };
+
+  const ex = (kind, id) => 'https://example.org/' + kind + '/' + encodeURIComponent(id);
+  const a = (href, text) => '<a href="' + href + '">' + text + '</a>';
+  const extA = (href, text) => a(href, text + ' <span class="ext">↗</span>');
+  const date = () => int(1, 28) + ' ' + pick(MONTHS) + ' ' + int(2004, 2024);
+
+  function authors() {
+    const n = int(1, 4);
+    const list = Array.from({ length: n }, () =>
+      pick(SURNAMES) + ', ' + String.fromCharCode(65 + int(0, 25)) + '.');
+    return list.join('; ');
+  }
+
+  function title() {
+    const r = rnd();
+    if (r < 0.2) return pick(TR_GROUPS) + ' türlerinde ' + pick(TR_SUBJECTS);
+    if (r < 0.6) return pick(SUBJECTS) + ' of ' + pick(GROUPS) + ' in ' + pick(CONTEXTS);
+    return pick(SUBJECTS) + ' in ' + pick(GROUPS) + ': ' + pick(STUDIES);
+  }
+
+  function isbn() { return '978-' + int(0, 1) + '-' + digits(3) + '-' + digits(5) + '-' + int(0, 9); }
+
+  function journalRef(year) {
+    const doi = '10.5555/' + pick(['awe', 'ssr', 'aml', 'jcs']) + '.' + year + '.' + digits(3);
+    const pmid = digits(8);
+    const p1 = int(1, 400);
+    return authors() + ' (' + year + '). "' + extA(ex('doi', doi), title()) + '". <i>' + pick(JOURNALS) + '</i>. <b>' +
+      int(1, 60) + '</b> (' + int(1, 12) + '): ' + p1 + '–' + (p1 + int(4, 30)) + '. ' +
+      a(ex('wiki', 'doi'), 'doi') + ':' + extA(ex('doi', doi), doi) + '. ' +
+      a(ex('wiki', 'pmid'), 'PMID') + ' ' + extA(ex('pmid', pmid), pmid) + '.';
+  }
+
+  function bookRef(year) {
+    const n = isbn();
+    return authors() + ' (' + year + '). ' + a(ex('book', n), '<i>' + pick(BOOKS) + '</i>') + '. ' +
+      pick(CITIES) + ': ' + pick(PUBLISHERS) + '. s. ' + int(5, 480) + '. ' +
+      a(ex('wiki', 'isbn'), 'ISBN') + ' ' + a(ex('isbn', n), n) + '.';
+  }
+
+  function webRef() {
+    const site = pick(SITES);
+    return '"' + extA('https://' + site + '/' + digits(5), title()) + '". ' + site + '. ' + date() +
+      ' tarihinde ' + extA(ex('archive', digits(6)), 'orijinalinden') + ' arşivlendi. Erişim tarihi: ' + date() + '.';
+  }
+
+  function backlinks(i) {
+    if (rnd() > 0.15) return a('#cite-' + i, '^') + ' ';
+    const n = int(2, 4);
+    return '^ ' + Array.from({ length: n }, (_, j) =>
+      '<sup>' + a('#cite-' + i + '-' + j, String.fromCharCode(97 + j)) + '</sup>').join(' ') + ' ';
+  }
+
+  const refs = [];
+  for (let i = 1; i <= 160; i++) {
+    const year = int(1975, 2024);
+    const r = rnd();
+    const body = r < 0.55 ? journalRef(year) : r < 0.82 ? bookRef(year) : webRef();
+    refs.push('<li id="cite-' + i + '">' + backlinks(i) + body + '</li>');
+  }
+
+  const further = Array.from({ length: 10 }, () => '<li>' + bookRef(int(1960, 2020)) + '</li>');
+  const external = Array.from({ length: 6 }, () => '<li>' + webRef() + '</li>');
+
+  const navRows = Object.entries(FAMILIES).map(([group, items]) =>
+    '<tr><td class="g">' + group + '</td><td>' +
+    items.map(name => a(ex('wiki', name), name)).join(' · ') + '</td></tr>').join('');
+
+  document.getElementById('content').innerHTML =
+    '<h1>Örümcek</h1>' +
+    '<p class="sub">Örnek ansiklopedi sayfası. Kaynakçadaki tüm yayınlar kurgusaldır.</p>' +
+    '<p><b>Örümcekler</b> (' + a(ex('wiki', 'Araneae'), 'Araneae') + '), sekiz bacaklı, ipek üretebilen ' +
+    a(ex('wiki', 'Eklembacaklılar'), 'eklembacaklılardır') + '. Bir ' + a(ex('wiki', 'Web tarayıcısı'), 'web tarayıcısı') +
+    ' (crawler) da tıpkı ağında dolaşan bir örümcek gibi bir sayfadaki ' + a(ex('wiki', 'Köprü'), 'bağlantıları') +
+    ' izler, gördüğü adresleri bir ' + a(ex('wiki', 'Kuyruk'), 'kuyruğa') + ' ekler ve sırayla ziyaret eder. ' +
+    'Bu sayfa o süreci görselleştirmek için hazırlanmıştır.</p>' +
+    '<h2>Kaynakça</h2><ol class="refs">' + refs.join('') + '</ol>' +
+    '<h2>Ek okumalar</h2><ul class="plain">' + further.join('') + '</ul>' +
+    '<h2>Dış bağlantılar</h2><ul class="plain">' + external.join('') + '</ul>' +
+    '<table class="navbox"><tr><th colspan="2">Yaşayan örümcek familyaları</th></tr>' + navRows + '</table>';
+
+  const goingDown = P.get('dir') === 'down';
+  const titleEl = document.getElementById('title');
+  if (P.get('title') === '0') titleEl.hidden = true;
+
+  window.CRAWLER_SPIDER_CONFIG = {
+    spiders: Math.max(1, Math.min(12, Number(P.get('n')) || 1)),
+    speed: Number(P.get('speed')) || 150,
+    size: Number(P.get('size')) || 1,
+    direction: goingDown ? 1 : -1,
+    hud: P.get('hud') !== '0'
+  };
+
+  /* Videodaki gibi sayfanın sonundan başlayıp yukarı tırmanır */
+  window.scrollTo(0, goingDown ? 0 : document.documentElement.scrollHeight);
+
+  window.addEventListener('keydown', e => {
+    if (e.key.toLowerCase() === 't' && !e.metaKey && !e.ctrlKey) titleEl.hidden = !titleEl.hidden;
+  });
+})();
+</script>
+<script src="spider.js"></script>
+</body>
+</html>
